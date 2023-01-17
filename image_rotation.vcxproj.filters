@@ -26,5 +26,8 @@
     <ClInclude Include="bitmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="pixel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
