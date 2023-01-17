@@ -1,95 +1,58 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <Windows.h>
+#include <vector>
+#include <cmath>
+#include "bitmap.h"
 
-bool rotate(char* src, char* dst, BITMAPINFOHEADER& bi, int angle)
+bool rotate(std::vector <std::vector <Pixel> >& bmp, int angle)
 {
-	//In 24bit image, the length of each row must be multiple of 4
-	int padw = 4 - ((bi.biWidth * 3) % 4);
-	if (padw == 4) padw = 0;
+	int height = bmp.size() / 100;
+	int width = bmp.size() / 100;
 
-	int padh = 4 - ((bi.biHeight * 3) % 4);
-	if (padh == 4) padh = 0;
-
-	int pad2 = 0;
-	if (padh == 1 || padh == 3) pad2 = 2;
-
-	bi.biHeight += padh;
-
-	int w = bi.biWidth;
-	int h = bi.biHeight;
-	if (angle == 90 || angle == 270)
+	for (int i = 0; i < height; i++)
 	{
-		std::swap(bi.biWidth, bi.biHeight);
-	}
-	else
-	{
-		bi.biHeight -= padh;
-	}
-
-	for (int row = 0; row < h; row++)
-	{
-		for (int col = 0; col < w; col++)
+		for (int j = 0; j < height; j++)
 		{
-			int n1 = 3 * (col + w * row) + padw * row;
-			int n2 = 0;
-
-			switch (angle)
-			{
-			case 0:   n2 = 3 * (col + w * row) + padw * row; break;
-			case 90:  n2 = 3 * ((h - row - 1) + h * col) + pad2 * col; break;
-			case 180: n2 = 3 * (col + w * (h - row - 1)) + padw * (h - row - 1); break;
-			case 270: n2 = 3 * (row + h * col) + pad2 * col; break;
-			}
-
-			dst[n2 + 0] = src[n1 + 0];
-			dst[n2 + 1] = src[n1 + 1];
-			dst[n2 + 2] = src[n1 + 2];
+			int dx = i - width / 2;
+			int dy = j - height / 2;
+			int nx = cos(angle) * dx + sin(angle) * dx;
+			int ny = cos(angle) * dy - sin(angle) * dy;
+			std::swap(bmp[i][j], bmp[ny][nx]);
 		}
 	}
-
-	for (int row = 0; row < bi.biHeight; row++)
-		for (int col = 0; col < padw; col++)
-			dst[bi.biWidth * 3 + col] = 0;
-
-	bi.biSizeImage = (bi.biWidth + padw) * bi.biHeight * 3;
 
 	return true;
 }
 
 int main()
 {
+	std::string input2 = "samples/FLAG_B24.BMP";
 	std::string input = "samples/lena_color.bmp";
 	std::string output = "results/lena_color_rotated.bmp";
 
-	BITMAPFILEHEADER bf = { 0 };
-	BITMAPINFOHEADER bi = { sizeof(BITMAPINFOHEADER) };
+	Bitmap image;
+	std::vector <std::vector <Pixel> > bmp;
+	Pixel rgb;
 
-	std::ifstream fin(input, std::ios::binary);
-	if (!fin) return 0;
+	//read a file example.bmp and convert it to a pixel matrix
+	image.open(input);
 
-	fin.read((char*)&bf, sizeof(bf));
-	fin.read((char*)&bi, sizeof(bi));
+	//verify that the file opened was a valid image
+	bool validBmp = image.isImage();
 
-	int size = 3 * (bi.biWidth + 3) * (bi.biHeight + 3);
-	char* src = new char[size];
-	char* dst = new char[size];
-
-	fin.read(src, bi.biSizeImage);
-
-	//use 0, 90, 180, or 270 for the angle
-	if (rotate(src, dst, bi, 90))
+	if (validBmp == true)
 	{
-		bf.bfSize = 54 + bi.biSizeImage;
-		std::ofstream fout(output, std::ios::binary);
-		fout.write((char*)&bf, 14);
-		fout.write((char*)&bi, 40);
-		fout.write((char*)dst, bi.biSizeImage);
-	}
+		bmp = image.toPixelMatrix();
 
-	delete[]src;
-	delete[]dst;
+		rotate(bmp, 45);
+
+		image.fromPixelMatrix(bmp);
+		image.save(output);
+	}
 
 	return 0;
 }
