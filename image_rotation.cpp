@@ -177,13 +177,19 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 
 	PixelMatrix result;
 
-	const int resHeigth = std::abs(width * cos(radian) + height * sin(radian));
+	const int resHeight = std::abs(width * cos(radian) + height * sin(radian));
 	const int resWidth = std::abs(width * sin(radian) + height * cos(radian));
+
+	const int xx = height / 2;
+	const int yy = width / 2;
+
+	const int resXx = resHeight / 2;
+	const int resYy = resWidth / 2;
 
 	for (int x = 0; x < resWidth; x++)
 	{
 		result.push_back(std::vector<Pixel>{});
-		for (int y = 0; y < resHeigth; y++)
+		for (int y = 0; y < resHeight; y++)
 		{
 			result[x].push_back(Pixel(0, 0, 0));
 		}
@@ -193,14 +199,24 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 	{
 		for (int y = 0; y < width; y++)
 		{
-			int dx = std::ceil(x * cos(radian) - y * sin(radian)) + resHeigth / 2;
-			int dy = std::ceil(x * sin(radian) + y * cos(radian));
+			int rx = resXx + std::ceil((x - xx) * cos(radian)) - std::ceil((y - yy) * sin(radian));
+			int ry = resYy + std::ceil((x - xx) * sin(radian)) + std::ceil((y - yy) * cos(radian));
 
-			if (dx > 0 && dx < resHeigth && dy > 0 && dy < resWidth) {
-				result[dx][dy] = pixels[x][y];
+			if (rx > 0 && rx < resHeight && ry > 0 && ry < resWidth) {
+				result[rx][ry] = pixels[x][y];
 			}
 		}
 	}
+
+	/*for (int x = 1; x < resHeigth - 1; x++)
+	{
+		for (int y = 1; y < resWidth - 1; y++)
+		{
+			if (result[x][y].blue == 0 && result[x][y].red == 0 && result[x][y].green == 0) {
+				result[x][y] = result[x - 1][y - 1];
+			}
+		}
+	}*/
 
 	pixels = result;
 }
