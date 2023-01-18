@@ -1,9 +1,10 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <Windows.h>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include "pixel.h"
 
 const int BITS_PER_PIXEL = 24;
@@ -170,39 +171,49 @@ void saveBmp(std::string filename, PixelMatrix& pixels)
 	}
 }
 
-void rotateImage(double deg, PixelMatrix& pixels) {
+void rotateImage(double degree, PixelMatrix& pixels) {
 	const int height = pixels.size();
 	const int width = pixels[0].size();
 	const int offsetY = height / 2;
 	const int offsetX = width / 2;
 
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			/*int dx = (x + offsetX) * cos(deg) - (y + offsetY) * sin(deg);
-			int dy = (x + offsetX) * sin(deg) + (y + offsetY) * cos(deg);*/
+	const float radian = degree * (M_PI / 180);
 
-			int dx = x * cos(deg) - y * sin(deg);
-			int dy = x * sin(deg) + y * cos(deg);
+	PixelMatrix result;
+	for (int x = 0; x < width; x++)
+	{
+		result.push_back(std::vector<Pixel>{});
+		for (int y = 0; y < height; y++)
+		{
+			result[x].push_back(Pixel(0, 0, 0));
+		}
+	}
+
+	for (int x = 0; x < height; x++)
+	{
+		for (int y = 0; y < width; y++)
+		{
+			int dx = std::ceil((x - offsetX) * cos(radian) - (y - offsetY) * sin(radian) + offsetX);
+			int dy = std::ceil((x - offsetX) * sin(radian) + (y - offsetY) * cos(radian) + offsetY);
 
 			if (dx > 0 && dx < width && dy > 0 && dy < height) {
-				std::swap(pixels[y][x], pixels[dy][dx]);
-				//pixels[y][x] = Pixel(0, 0, 0);
+				result[x][y] = pixels[dx][dy];
 			}
 		}
 	}
+
+	pixels = result;
 }
 
 int main()
 {
-	std::string input = "samples/FLAG_B24.BMP";
+	std::string input = "samples/lena_color.bmp";
 	std::string output = "results/FLAG_B24_rotated.bmp";
 
 	PixelMatrix pixels;
 
 	loadBmp(input, pixels);
-	rotateImage(180, pixels);
+	rotateImage(45, pixels);
 	saveBmp(output, pixels);
 
 	return 0;
