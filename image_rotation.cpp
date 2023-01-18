@@ -3,7 +3,7 @@
 #include <string>
 #include <Windows.h>
 #include <vector>
-#include <cmath>
+#include <math.h>
 #include "pixel.h"
 
 const int BITS_PER_PIXEL = 24;
@@ -61,6 +61,13 @@ void loadBmp(std::string fileName, PixelMatrix& pixels) {
 		file.read((char*)(&header), sizeof(header));
 		file.read((char*)(&info), sizeof(info));
 
+		bool flip = true;
+		if (info.height < 0)
+		{
+			flip = false;
+			info.height = -info.height;
+		}
+
 		if (info.bits_per_pixel != 24)
 		{
 			std::cerr << fileName << " uses " << info.bits_per_pixel
@@ -90,31 +97,113 @@ void loadBmp(std::string fileName, PixelMatrix& pixels) {
 
 			file.seekg(info.width % 4, std::ios::cur);
 
-			pixels.push_back(rowData);
+			if (flip)
+			{
+				pixels.insert(pixels.begin(), rowData);
+			}
+			else
+			{
+				pixels.push_back(rowData);
+			}
 		}
 
 		file.close();
 	}
 }
 
+void saveBmp(std::string filename, PixelMatrix& pixels)
+{
+	std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
+
+	if (file.fail())
+	{
+		std::cerr << filename << " could not be opened for editing. "
+			<< "Is it already open by another program or is it read-only?\n";
+	}
+
+	else
+	{
+		uchar_t bmpFileId[BMP_ID];
+		bmpFileId[0] = 'B';
+		bmpFileId[1] = 'M';
+		file.write((char*)(&bmpFileId), sizeof(bmpFileId));
+		bmpfile_header header = { 0 };
+		header.bmp_offset = sizeof(bmpFileId)
+			+ sizeof(bmpfile_header) + sizeof(bmpfile_dib_info);
+		header.file_size = header.bmp_offset
+			+ (pixels.size() * 3 + pixels[0].size() % 4) * pixels.size();
+		file.write((char*)(&header), sizeof(header));
+		bmpfile_dib_info dib_info = { 0 };
+		dib_info.header_size = sizeof(bmpfile_dib_info);
+		dib_info.width = pixels[0].size();
+		dib_info.height = pixels.size();
+		dib_info.num_planes = 1;
+		dib_info.bits_per_pixel = 24;
+		dib_info.compression = 0;
+		dib_info.bmp_byte_size = 0;
+		dib_info.hres = 2835;
+		dib_info.vres = 2835;
+		dib_info.num_colors = 0;
+		dib_info.num_important_colors = 0;
+		file.write((char*)(&dib_info), sizeof(dib_info));
+
+		for (int row = pixels.size() - 1; row >= 0; row--)
+		{
+			const std::vector <Pixel>& row_data = pixels[row];
+
+			for (int col = 0; col < row_data.size(); col++)
+			{
+				const Pixel& pix = row_data[col];
+
+				file.put((uchar_t)(pix.blue));
+				file.put((uchar_t)(pix.green));
+				file.put((uchar_t)(pix.red));
+			}
+
+			for (int i = 0; i < row_data.size() % 4; i++)
+			{
+				file.put(0);
+			}
+		}
+
+		file.close();
+	}
+}
+
+void rotateImage(double deg, PixelMatrix& pixels) {
+	const int height = pixels.size();
+	const int width = pixels[0].size();
+	const int offsetY = height / 2;
+	const int offsetX = width / 2;
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			/*int dx = (x + offsetX) * cos(deg) - (y + offsetY) * sin(deg);
+			int dy = (x + offsetX) * sin(deg) + (y + offsetY) * cos(deg);*/
+
+			int dx = x * cos(deg) - y * sin(deg);
+			int dy = x * sin(deg) + y * cos(deg);
+
+			if (dx > 0 && dx < width && dy > 0 && dy < height) {
+				std::swap(pixels[y][x], pixels[dy][dx]);
+				//pixels[y][x] = Pixel(0, 0, 0);
+			}
+		}
+	}
+}
+
 int main()
 {
 	std::string input = "samples/FLAG_B24.BMP";
-	std::string output = "results/lena_color_rotated.bmp";
+	std::string output = "results/FLAG_B24_rotated.bmp";
 
 	PixelMatrix pixels;
 
 	loadBmp(input, pixels);
+	rotateImage(180, pixels);
+	saveBmp(output, pixels);
 
-	for (int i = 0; i < pixels.size() / 10; i++)
-	{
-		for (int j = 0; j < pixels[i].size() / 10; j++)
-		{
-			std::cout << pixels[i][j].red << " ";
-		}
-		std::cout << std::endl;
-	}
-
-	std::cout << "test";
 	return 0;
 }
