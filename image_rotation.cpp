@@ -172,8 +172,6 @@ void saveBmp(std::string filename, PixelMatrix& pixels)
 void rotateImage(double degree, PixelMatrix& pixels) {
 	const int height = pixels.size();
 	const int width = pixels[0].size();
-	const int offsetY = width / 2;
-	const int offsetX = height / 2;
 
 	const float radian = degree * (M_PI / 180);
 
@@ -195,8 +193,8 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 	{
 		for (int y = 0; y < width; y++)
 		{
-			int dx = std::ceil((x - offsetX) * cos(radian) - (y - offsetY) * sin(radian)) + offsetX;
-			int dy = std::ceil((x - offsetX) * sin(radian) + (y - offsetY) * cos(radian)) + offsetY;
+			int dx = std::ceil(x * cos(radian) - y * sin(radian)) + resHeigth / 2;
+			int dy = std::ceil(x * sin(radian) + y * cos(radian));
 
 			if (dx > 0 && dx < resHeigth && dy > 0 && dy < resWidth) {
 				result[dx][dy] = pixels[x][y];
