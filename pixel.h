@@ -7,4 +7,8 @@ public:
 	Pixel() : red(0), green(0), blue(0) { }
 
 	Pixel(int r, int g, int b) : red(r), green(g), blue(b) { }
+
+	bool isBlack() {
+		return red == 0 && green == 0 && blue == 0;
+	}
 };

@@ -177,8 +177,8 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 
 	PixelMatrix result;
 
-	const int resHeight = std::abs(width * cos(radian) + height * sin(radian));
-	const int resWidth = std::abs(width * sin(radian) + height * cos(radian));
+	const int resHeight = std::abs(width * cos(radian)) + std::abs(height * sin(radian));
+	const int resWidth = std::abs(width * sin(radian)) + std::abs(height * cos(radian));
 
 	const int xx = height / 2;
 	const int yy = width / 2;
@@ -199,8 +199,8 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 	{
 		for (int y = 0; y < width; y++)
 		{
-			int rx = resXx + std::ceil((x - xx) * cos(radian)) - std::ceil((y - yy) * sin(radian));
-			int ry = resYy + std::ceil((x - xx) * sin(radian)) + std::ceil((y - yy) * cos(radian));
+			int rx = resXx + std::ceil((x - xx) * cos(radian)) + std::ceil((y - yy) * sin(radian));
+			int ry = resYy - std::ceil((x - xx) * sin(radian)) + std::ceil((y - yy) * cos(radian));
 
 			if (rx > 0 && rx < resHeight && ry > 0 && ry < resWidth) {
 				result[rx][ry] = pixels[x][y];
@@ -208,15 +208,20 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 		}
 	}
 
-	/*for (int x = 1; x < resHeigth - 1; x++)
+	for (int x = 1; x < resHeight - 1; x++)
 	{
 		for (int y = 1; y < resWidth - 1; y++)
 		{
-			if (result[x][y].blue == 0 && result[x][y].red == 0 && result[x][y].green == 0) {
-				result[x][y] = result[x - 1][y - 1];
+			if (result[x][y].isBlack()) {
+				if (!result[x + 1][y + 1].isBlack()) {
+					result[x][y] = result[x + 1][y + 1];
+				}
+				else if (!result[x][y + 1].isBlack()) {
+					result[x][y] = result[x][y + 1];
+				}
 			}
 		}
-	}*/
+	}
 
 	pixels = result;
 }
@@ -224,13 +229,13 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 int main()
 {
 	std::string input = "samples/lena_color.bmp";
-	std::string output = "results/FLAG_B24_rotated.bmp";
+	std::string output1 = "results/FLAG_B24_rotated.bmp";
 
 	PixelMatrix pixels;
 
 	loadBmp(input, pixels);
-	rotateImage(45, pixels);
-	saveBmp(output, pixels);
+	rotateImage(79, pixels);
+	saveBmp(output1, pixels);
 
 	return 0;
 }
