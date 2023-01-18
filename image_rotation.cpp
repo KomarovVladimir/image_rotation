@@ -40,8 +40,6 @@ struct bmpfile_dib_info
 	uint32_t num_important_colors;
 };
 
-//std::string input = "samples/lena_color.bmp";
-
 void loadBmp(std::string fileName, PixelMatrix& pixels) {
 	std::ifstream file(fileName.c_str(), std::ios::in | std::ios::binary);
 
@@ -174,16 +172,20 @@ void saveBmp(std::string filename, PixelMatrix& pixels)
 void rotateImage(double degree, PixelMatrix& pixels) {
 	const int height = pixels.size();
 	const int width = pixels[0].size();
-	const int offsetY = height / 2;
-	const int offsetX = width / 2;
+	const int offsetY = width / 2;
+	const int offsetX = height / 2;
 
 	const float radian = degree * (M_PI / 180);
 
 	PixelMatrix result;
-	for (int x = 0; x < width; x++)
+
+	const int resHeigth = std::abs(width * cos(radian) + height * sin(radian));
+	const int resWidth = std::abs(width * sin(radian) + height * cos(radian));
+
+	for (int x = 0; x < resWidth; x++)
 	{
 		result.push_back(std::vector<Pixel>{});
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < resHeigth; y++)
 		{
 			result[x].push_back(Pixel(0, 0, 0));
 		}
@@ -193,11 +195,11 @@ void rotateImage(double degree, PixelMatrix& pixels) {
 	{
 		for (int y = 0; y < width; y++)
 		{
-			int dx = std::ceil((x - offsetX) * cos(radian) - (y - offsetY) * sin(radian) + offsetX);
-			int dy = std::ceil((x - offsetX) * sin(radian) + (y - offsetY) * cos(radian) + offsetY);
+			int dx = std::ceil((x - offsetX) * cos(radian) - (y - offsetY) * sin(radian)) + offsetX;
+			int dy = std::ceil((x - offsetX) * sin(radian) + (y - offsetY) * cos(radian)) + offsetY;
 
-			if (dx > 0 && dx < width && dy > 0 && dy < height) {
-				result[x][y] = pixels[dx][dy];
+			if (dx > 0 && dx < resHeigth && dy > 0 && dy < resWidth) {
+				result[dx][dy] = pixels[x][y];
 			}
 		}
 	}
